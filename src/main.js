@@ -1,9 +1,9 @@
-﻿import './style.css';
+import './style.css';
 import { renderApp, icon } from './ui/components.js';
 import { BoardRenderer } from './ui/BoardRenderer.js';
 import { GameEngine } from './game/engine.js';
 import { AudioManager } from './services/audio.js';
-import { LeaderboardService } from './services/leaderboard.js';
+import { LeaderboardUI } from './ui/LeaderboardUI.js';
 
 renderApp(document.querySelector('#app'));
 const $ = id => document.getElementById(id);
@@ -11,8 +11,9 @@ const audio = new AudioManager();
 const renderer = new BoardRenderer($('game'));
 const game = new GameEngine({
   onEat: () => { audio.play('eat'); if (game.snake[0]) renderer.burst(game.snake[0]); },
-  onEnd: () => { audio.play('end'); loadLeaderboard(); },
+  onEnd: snapshot => { audio.play('end'); online.finish(snapshot); },
 });
+const online = new LeaderboardUI({ onPause: () => { game.pause(); updateUI(); } });
 const pad = n => String(n).padStart(2, '0');
 let lastState = null;
 let statsCache = '';
@@ -25,8 +26,8 @@ function syncAudio() {
 syncAudio();
 function act(action) {
   audio.unlock();
-  if (action === 'start') game.start();
-  if (action === 'restart') { renderer.clearEffects(); game.restart(); }
+  if (action === 'start') { online.beforePlay(() => { game.start(); updateUI(); }); return; }
+  if (action === 'restart') { online.beforePlay(() => { renderer.clearEffects(); game.restart(); updateUI(); }); return; }
   if (action === 'resume') game.resume();
   if (action === 'menu') { renderer.clearEffects(); game.menu(); }
   if (action === 'pause') {
@@ -102,23 +103,6 @@ for (const event of ['pointerup','pointercancel']) $('board-wrap').addEventListe
 window.addEventListener('blur', () => { if (game.state === 'playing') {game.pause();updateUI();} });
 document.addEventListener('visibilitychange', () => { if (document.hidden && game.state === 'playing') {game.pause();updateUI();} });
 
-async function loadLeaderboard() {
-  try {
-    const service = new LeaderboardService();
-    const entries = await service.getTop();
-    const fragment = document.createDocumentFragment();
-    entries.slice(0,5).forEach((entry, index) => {
-      const row = document.createElement('li'); row.className = 'leader-row';
-      const rank = document.createElement('span'); rank.className = 'rank'; rank.textContent = pad(index+1);
-      const avatar = document.createElement('span'); avatar.className = 'avatar'; avatar.textContent = entry.name.slice(0,2).toUpperCase();
-      const name = document.createElement('span'); name.className = 'player-name'; name.textContent = entry.name;
-      const score = document.createElement('span'); score.className = 'player-score'; score.textContent = entry.score.toLocaleString('en-US');
-      row.append(rank,avatar,name,score); fragment.append(row);
-    });
-    $('leader-list').replaceChildren(fragment);
-  } catch { $('leader-list').textContent = 'Demo scores unavailable.'; }
-}
-loadLeaderboard();
 updateUI();
 // One animation loop for the lifetime of the app; start/restart never create loops.
 let lastTime = null;
@@ -133,6 +117,3 @@ function frame(time) {
 }
 frameId = requestAnimationFrame(frame);
 if (import.meta.hot) import.meta.hot.dispose(() => { cancelAnimationFrame(frameId); renderer.destroy(); });
-
-
-

@@ -1,4 +1,4 @@
-import { storage as defaultStorage } from './storage.js';
+﻿import { storage as defaultStorage } from './storage.js';
 const DEMO_ENTRIES = Object.freeze([
   { name: 'NEON VIPER', score: 480, avatar: 'NV' },
   { name: 'PIXEL KING', score: 360, avatar: 'PK' },
@@ -21,3 +21,28 @@ export class LeaderboardService {
   }
 }
 export const leaderboard = new LeaderboardService();
+
+/** Same-origin API adapter. No Supabase keys or guest IDs are exposed to scripts. */
+export class OnlineLeaderboardService {
+  constructor(request = globalThis.fetch.bind(globalThis)) { this.request = request; }
+  async call(path, body) {
+    const response = await this.request(`/api/${path}`, {
+      method: body === undefined ? 'GET' : 'POST', credentials: 'same-origin',
+      headers: body === undefined ? {} : {'Content-Type':'application/json'},
+      body: body === undefined ? undefined : JSON.stringify(body),
+      signal: AbortSignal.timeout(10000),
+    });
+    let data;
+    try { data = await response.json(); } catch { const error = new Error('Online API unavailable'); error.status = import.meta.env?.DEV && !response.headers?.get('content-type')?.includes('application/json') ? 404 : 502; throw error; }
+    if (!response.ok) {
+      const error = new Error(data.error || 'Online service unavailable. Please try again.');
+      error.status = response.status; throw error;
+    }
+    return data;
+  }
+  async getTop() { const data = await this.call('leaderboard'); if (!Array.isArray(data.entries)) throw new Error('Invalid leaderboard response'); return data.entries; }
+  async getGuest() { return this.call('guest'); }
+  async setGuest(name) { return this.call('guest', {name}); }
+  async submit(score, elapsed) { return this.call('scores', {score,elapsed}); }
+}
+

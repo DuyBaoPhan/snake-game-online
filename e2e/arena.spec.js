@@ -67,3 +67,38 @@ test('responsive layouts fit narrow and wide screens', async ({ page }) => {
     expect(Math.abs(board.width-board.height)).toBeLessThan(2);
   }
 });
+
+test('online guest enters name, saves score and sees shared ranking', async ({ page }) => {
+  let named = false; let submissions = 0;
+  await page.route('**/api/leaderboard', route => route.fulfill({json:{entries:[{rank:1,name:'REAL PLAYER',score:120}],mode:'online'}}));
+  await page.route('**/api/guest', route => {
+    if (route.request().method() === 'POST') { named=true; return route.fulfill({json:{name:'Guest One'}}); }
+    return route.fulfill({status:named?200:401,json:named?{name:'Guest One'}:{error:'No session'}});
+  });
+  await page.route('**/api/scores', route => { submissions++; return route.fulfill({json:{saved:true,bestScore:0}}); });
+  await page.goto('/');
+  await expect(page.locator('.demo-pill')).toHaveText('ONLINE');
+  await expect(page.locator('#leader-list')).toContainText('REAL PLAYER');
+  await page.getByRole('button',{name:'PLAY NOW'}).click();
+  await expect(page.locator('#guest-dialog')).toBeVisible();
+  await page.locator('#guest-name').fill('Guest One');
+  await page.getByRole('button',{name:'SAVE NAME'}).click();
+  await expect(page.locator('#guest-dialog')).not.toBeVisible();
+  await expect(page.locator('#overlay')).toBeHidden();
+  await expect(page.locator('#overlay-content h2')).toContainText('GAME OVER',{timeout:6000});
+  await expect(page.locator('#score-sync')).toContainText('Đã lưu');
+  expect(submissions).toBe(1);
+});
+
+test('failed score submission can be retried without blocking play', async ({page}) => {
+  let attempts=0;
+  await page.route('**/api/leaderboard', r=>r.fulfill({json:{entries:[],mode:'online'}}));
+  await page.route('**/api/guest',r=>r.fulfill({json:{name:'Existing Guest'}}));
+  await page.route('**/api/scores',r=> {attempts++;return r.fulfill({status:attempts===1?503:200,json:attempts===1?{error:'Unavailable'}:{saved:true,bestScore:0}});});
+  await page.goto('/');
+  await page.getByRole('button',{name:'PLAY NOW'}).click();
+  await expect(page.locator('#retry-score')).toBeVisible({timeout:7000});
+  await page.locator('#retry-score').click();
+  await expect(page.locator('#score-sync')).toContainText('Đã lưu');
+  expect(attempts).toBe(2);
+});

@@ -1,4 +1,4 @@
-﻿export const icons = {
+export const icons = {
  snake: '<path d="M5 19h11a4 4 0 0 0 0-8H8a3 3 0 0 1 0-6h11"/><path d="M17 3h3v4"/>',
  sound: '<path d="m11 5-6 4H2v6h3l6 4z"/><path d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/>',
  mute: '<path d="m11 5-6 4H2v6h3l6 4zM16 9l6 6m0-6-6 6"/>',
@@ -37,5 +37,5 @@ export function renderApp(root) {
  <div class="sidebar-foot"><span class="mini-cross">+</span> BUILT FOR THE LOVE OF THE GAME <span class="mini-cross">+</span></div>
  </aside></div></main>
  <footer class="site-footer"><span>SNAKE ARENA <span class="footer-slash">/</span> <span class="muted">LESS SCROLLING. MORE PLAYING.</span></span><span class="muted">LOCAL ARCADE <span class="version">v1.0</span></span></footer>
- <dialog id="help-dialog"><div class="dialog-heading"><span class="eyebrow">FIELD MANUAL</span><button id="close-help" class="icon-button" aria-label="Close instructions">${icon('close')}</button></div><h2>Welcome to the arena.</h2><p>Use <b>WASD / arrow keys</b>, swipe on the board, or use the touch D-pad. Collect green food for <b>10 points</b>. Every 50 points increases your level and speed.</p><p>Avoid walls and your body. You cannot reverse direction. Press <b>Space</b> or <b>Escape</b> to pause, and <b>R</b> to restart.</p><p>Your best is saved only on this browser when storage is available. The leaderboard is a demo, not a live online ranking.</p><button class="primary-button" id="got-it">GOT IT ${icon('arrow')}</button></dialog><div id="announcer" class="sr-only" role="status" aria-live="polite"></div>`;
+ <dialog id="help-dialog"><div class="dialog-heading"><span class="eyebrow">FIELD MANUAL</span><button id="close-help" class="icon-button" aria-label="Close instructions">${icon('close')}</button></div><h2>Welcome to the arena.</h2><p>Use <b>WASD / arrow keys</b>, swipe on the board, or use the touch D-pad. Collect green food for <b>10 points</b>. Every 50 points increases your level and speed.</p><p>Avoid walls and your body. You cannot reverse direction. Press <b>Space</b> or <b>Escape</b> to pause, and <b>R</b> to restart.</p><p>Your best is saved only on this browser when storage is available. Online mode shows shared guest scores; local demo mode is explicitly labeled. Guest scores are for casual play, not verified competition.</p><button class="primary-button" id="got-it">GOT IT ${icon('arrow')}</button></dialog><div id="announcer" class="sr-only" role="status" aria-live="polite"></div>`;
 }
